@@ -1,0 +1,47 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: powermon
+      POSTGRES_USER: powermon
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di deploy/.env}
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432" # hanya dari server sendiri (psql/debug), tidak terbuka ke LAN
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U powermon -d powermon"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build:
+      context: ..
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER: tcp://mosquitto:1883
+      DB_DSN: postgres://powermon:${DB_PASSWORD}@timescaledb:5432/powermon
+      TZ: Asia/Jakarta
+      OFFLINE_AFTER: 6s # harus >= SAMPLE_INTERVAL_MS di firmware (lihat DEVICE_OFFLINE_AFTER_MS di config.h)
+    depends_on:
+      mosquitto:
+        condition: service_started
+      timescaledb:
+        condition: service_healthy
+    ports:
+      - "1077:8080"
+
+volumes:
+  mosquitto_data:
+  timescale_data:

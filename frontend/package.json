@@ -1,0 +1,18 @@
+{
+  "name": "powermon-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@iconify/vue": "^5.0.4",
+    "chart.js": "^4.5.1",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "vite": "^6.4.5"
+  }
+}

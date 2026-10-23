@@ -1,0 +1,29 @@
+# Local environment files and secrets. Commit only the corresponding examples.
+.env
+.env.*
+!.env.example
+!*.env.example
+
+# Per-device network and broker settings may contain WiFi/MQTT credentials.
+firmware/**/include/config.h
+!firmware/**/include/config.example.h
+
+# Dependencies and generated frontend output.
+**/node_modules/
+frontend/dist/
+
+# Locally built Go binary.
+backend/powermon
+
+# PlatformIO build artifacts, libraries, and local settings.
+firmware/**/.pio/
+firmware/**/.pioenvs/
+firmware/**/.piolibdeps/
+firmware/**/.vscode/
+
+# Editor, operating-system, and log files.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

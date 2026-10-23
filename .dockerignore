@@ -1,0 +1,5 @@
+**/node_modules
+frontend/dist
+firmware
+deploy
+z_tmp
