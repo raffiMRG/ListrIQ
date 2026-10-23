@@ -5,7 +5,7 @@
 #define WIFI_SSID "ganti_ssid"
 #define WIFI_PASS "ganti_password"
 
-#define MQTT_HOST "192.168.1.10" // IP atau hostname server MQTT lokal
+#define MQTT_HOST "192.168.1.123" // IP atau hostname server MQTT lokal
 #define MQTT_PORT 1883
 #define MQTT_USER nullptr // isi "user" jika Mosquitto memakai autentikasi
 #define MQTT_PASS nullptr // isi "password" jika Mosquitto memakai autentikasi
