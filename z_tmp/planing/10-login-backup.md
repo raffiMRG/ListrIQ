@@ -32,13 +32,13 @@ Tambahkan variabel berikut ke `deploy/.env`, dengan contoh placeholder saja di `
 
 ```dotenv
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=$argon2id$...
+ADMIN_PASSWORD_HASH=password123
 ADMIN_SESSION_TTL=8h
 ADMIN_RESTORE_MAX_BYTES=2147483648
 ```
 
-- Password hanya disimpan sebagai hash Argon2id, tidak pernah plaintext.
-- Sediakan helper/tool dokumentasi untuk menghasilkan Argon2id hash sebelum deployment.
+- `ADMIN_PASSWORD_HASH` berisi password mentah sesuai kebutuhan deployment. Backend langsung mengubahnya menjadi hash Argon2id di memori saat startup; nilai mentah tidak disimpan di database atau dikirim ke browser.
+- Karena `.env` tetap berisi password plaintext, file ini harus diabaikan Git dan hanya dapat dibaca admin server.
 - File `.env` tetap diabaikan Git.
 
 ### Sesi dan proteksi

@@ -30,7 +30,11 @@ func newAuth() (*authService, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &authService{username: osEnv("ADMIN_USERNAME"), hash: osEnv("ADMIN_PASSWORD_HASH"), ttl: ttl, sessions: map[string]session{}, failed: map[string][]time.Time{}}, nil
+	password := osEnv("ADMIN_PASSWORD_HASH")
+	if password == "" {
+		return &authService{ttl: ttl, sessions: map[string]session{}, failed: map[string][]time.Time{}}, nil
+	}
+	return &authService{username: osEnv("ADMIN_USERNAME"), hash: hashPassword(password), ttl: ttl, sessions: map[string]session{}, failed: map[string][]time.Time{}}, nil
 }
 
 func osEnv(key string) string { return strings.TrimSpace(env(key, "")) }
