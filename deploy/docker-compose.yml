@@ -34,6 +34,12 @@ services:
       DB_DSN: postgres://powermon:${DB_PASSWORD}@timescaledb:5432/powermon
       TZ: Asia/Jakarta
       OFFLINE_AFTER: 6s # harus >= SAMPLE_INTERVAL_MS di firmware (lihat DEVICE_OFFLINE_AFTER_MS di config.h)
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      ADMIN_SESSION_TTL: ${ADMIN_SESSION_TTL:-8h}
+      ADMIN_RESTORE_MAX_BYTES: ${ADMIN_RESTORE_MAX_BYTES:-2147483648}
+      ADMIN_BACKUP_DIR: /data/backups
+      ADMIN_TMP_DIR: /data/tmp
     depends_on:
       mosquitto:
         condition: service_started
@@ -41,7 +47,12 @@ services:
         condition: service_healthy
     ports:
       - "1077:8080"
+    volumes:
+      - admin_backups:/data/backups
+      - admin_tmp:/data/tmp
 
 volumes:
   mosquitto_data:
   timescale_data:
+  admin_backups:
+  admin_tmp:

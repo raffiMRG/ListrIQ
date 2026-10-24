@@ -1,12 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
 import AppChart from '../AppChart.vue'
 import { METRICS } from '../live.js'
 
-// datetime-local butuh "YYYY-MM-DDTHH:mm" waktu lokal
-const local = (d) => new Date(d - d.getTimezoneOffset() * 60e3).toISOString().slice(0, 16)
-const from = ref(local(new Date(Date.now() - 86400e3)))
-const to = ref(local(new Date()))
+const dateRange = ref([new Date(Date.now() - 86400e3), new Date()])
 const resolution = ref('auto')
 const metric = ref('power')
 const rows = ref([])
@@ -14,7 +13,12 @@ const error = ref('')
 
 async function load() {
   error.value = ''
-  const q = new URLSearchParams({ from: new Date(from.value).toISOString(), to: new Date(to.value).toISOString(), resolution: resolution.value })
+  const [from, to] = dateRange.value || []
+  if (!(from instanceof Date) || !(to instanceof Date) || from >= to) {
+    error.value = 'Pilih rentang waktu yang lengkap dan valid.'
+    return
+  }
+  const q = new URLSearchParams({ from: from.toISOString(), to: to.toISOString(), resolution: resolution.value })
   const r = await fetch(`/api/readings/history?${q}`)
   if (!r.ok) return (error.value = await r.text())
   rows.value = await r.json()
@@ -34,8 +38,9 @@ const datasets = computed(() => {
 <template>
   <div class="card">
     <div class="row">
-      <label>Dari <input type="datetime-local" v-model="from" /></label>
-      <label>Sampai <input type="datetime-local" v-model="to" /></label>
+      <label class="range-picker">Rentang waktu
+        <VueDatePicker v-model="dateRange" range :enable-time-picker="true" :locale="'id-ID'" format="dd MMM yyyy, HH:mm" :teleport="true" :clearable="false" placeholder="Pilih rentang waktu" />
+      </label>
       <select v-model="resolution">
         <option value="auto">Otomatis</option>
         <option value="raw">Raw</option>
@@ -52,3 +57,8 @@ const datasets = computed(() => {
     <AppChart v-else :labels="labels" :datasets="datasets" />
   </div>
 </template>
+
+<style scoped>
+.range-picker { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.range-picker :deep(.dp__input) { min-width: 260px; border-color: var(--border); color: var(--text); background: var(--card); }
+</style>

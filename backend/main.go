@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -17,9 +18,11 @@ import (
 )
 
 var (
-	db  *pgxpool.Pool
-	loc *time.Location
-	hub = &Hub{conns: map[*websocket.Conn]bool{}}
+	db    *pgxpool.Pool
+	loc   *time.Location
+	hub   = &Hub{conns: map[*websocket.Conn]bool{}}
+	auth  *authService
+	admin *adminService
 )
 
 func env(key, def string) string {
@@ -30,6 +33,10 @@ func env(key, def string) string {
 }
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "hash-password" {
+		fmt.Println(hashPassword(os.Args[2]))
+		return
+	}
 	var err error
 	if loc, err = time.LoadLocation(env("TZ", "Asia/Jakarta")); err != nil {
 		log.Fatal(err)
@@ -41,6 +48,15 @@ func main() {
 	}
 	if db, err = pgxpool.New(context.Background(), env("DB_DSN", "postgres://powermon:powermon@localhost:5432/powermon")); err != nil {
 		log.Fatal(err)
+	}
+	if auth, err = newAuth(); err != nil {
+		log.Fatal(err)
+	}
+	if admin, err = newAdmin(); err != nil {
+		log.Fatal(err)
+	}
+	if !auth.enabled() {
+		log.Println("admin login disabled: set ADMIN_USERNAME and ADMIN_PASSWORD_HASH")
 	}
 
 	opts := mqtt.NewClientOptions().
@@ -83,6 +99,9 @@ type Reading struct {
 }
 
 func onData(_ mqtt.Client, m mqtt.Message) {
+	if admin != nil && admin.isMaintenance() {
+		return
+	}
 	var r Reading
 	if err := json.Unmarshal(m.Payload(), &r); err != nil {
 		log.Printf("bad payload on %s: %v", m.Topic(), err)

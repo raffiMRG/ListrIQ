@@ -13,15 +13,49 @@ export const METRICS = [
 ]
 
 export const fmt = (v, dec) => (v == null ? '–' : Number(v).toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec }))
-const MAX_POINTS = 450 // ~15 menit pada interval 2 detik
+export const TIMEFRAMES = [
+  { minutes: 1, label: '1 menit terakhir' },
+  { minutes: 10, label: '10 menit terakhir' },
+  { minutes: 30, label: '30 menit terakhir' },
+  { minutes: 60, label: '1 jam terakhir' },
+]
 
 // State realtime bersama: diisi WebSocket, dibaca Dashboard.
-export const live = reactive({ reading: null, status: 'offline', lastSeen: null, points: [], connected: false })
+export const live = reactive({ reading: null, status: 'offline', lastSeen: null, points: [], connected: false, loading: false })
+let timeframeMinutes = 10
+let historyController
+
+function trimPoints() {
+  const cutoff = Date.now() - timeframeMinutes * 60e3
+  live.points = live.points.filter((point) => new Date(point.ts).getTime() >= cutoff)
+}
 
 function push(r) {
   live.reading = r
   live.points.push(r)
-  if (live.points.length > MAX_POINTS) live.points.shift()
+  trimPoints()
+}
+
+export async function loadTimeframe(minutes) {
+  timeframeMinutes = minutes
+  historyController?.abort()
+  const controller = new AbortController()
+  historyController = controller
+  live.loading = true
+  const to = new Date()
+  const from = new Date(to.getTime() - minutes * 60e3)
+  try {
+    const response = await fetch(`/api/readings/history?resolution=raw&from=${from.toISOString()}&to=${to.toISOString()}`, {
+      signal: controller.signal,
+    })
+    if (!response.ok) throw new Error(`Riwayat: ${response.status}`)
+    live.points = await response.json()
+    trimPoints()
+  } catch (error) {
+    if (error.name !== 'AbortError') console.error(error)
+  } finally {
+    if (historyController === controller) live.loading = false
+  }
 }
 
 function connect() {
@@ -46,13 +80,9 @@ function connect() {
 }
 
 export async function start() {
-  const from = new Date(Date.now() - 15 * 60e3).toISOString()
-  const [status, points] = await Promise.all([
-    fetch('/api/status').then((r) => r.json()),
-    fetch(`/api/readings/history?resolution=raw&from=${from}`).then((r) => r.json()),
-  ])
+  const status = await fetch('/api/status').then((r) => r.json())
   const s = status.find((d) => d.device_id === DEVICE)
   if (s) Object.assign(live, { status: s.status, lastSeen: s.last_seen })
-  points.forEach(push)
+  await loadTimeframe(timeframeMinutes)
   connect()
 }

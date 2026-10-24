@@ -4,12 +4,14 @@ import { Icon } from '@iconify/vue'
 import Dashboard from './views/Dashboard.vue'
 import History from './views/History.vue'
 import Report from './views/Report.vue'
+import Settings from './views/Settings.vue'
 import { start } from './live.js'
 
 const pages = {
   dashboard: ['Dashboard', 'solar:widget-5-bold', Dashboard],
   history: ['Histori', 'solar:chart-2-bold', History],
   report: ['Laporan', 'solar:document-text-bold', Report],
+  settings: ['Pengaturan', 'solar:settings-bold', Settings],
 }
 const page = ref(location.hash.slice(1) in pages ? location.hash.slice(1) : 'dashboard')
 window.addEventListener('hashchange', () => (page.value = location.hash.slice(1) in pages ? location.hash.slice(1) : 'dashboard'))

@@ -11,6 +11,15 @@ import (
 
 // Semua endpoint mengembalikan array JSON baris hasil query.
 func routes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/auth/login", auth.login)
+	mux.HandleFunc("POST /api/auth/logout", auth.logout)
+	mux.HandleFunc("GET /api/auth/me", auth.me)
+	mux.HandleFunc("GET /api/admin/storage", auth.require(admin.storage))
+	mux.HandleFunc("POST /api/admin/backup", auth.require(admin.backup))
+	mux.HandleFunc("GET /api/admin/backup/{id}/download", auth.require(admin.download))
+	mux.HandleFunc("POST /api/admin/restore", auth.require(admin.uploadRestore))
+	mux.HandleFunc("POST /api/admin/restore/{id}/confirm", auth.require(admin.confirmRestore))
+	mux.HandleFunc("GET /api/admin/jobs/{id}", auth.require(admin.status))
 	mux.HandleFunc("GET /api/status", func(w http.ResponseWriter, r *http.Request) {
 		queryJSON(w, r, `SELECT device_id, status, last_seen FROM device_status ORDER BY device_id`)
 	})

@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+func TestPasswordHash(t *testing.T) {
+	hash := hashPassword("rahasia-admin")
+	if !verifyPassword("rahasia-admin", hash) {
+		t.Fatal("password yang benar harus diterima")
+	}
+	if verifyPassword("salah", hash) {
+		t.Fatal("password yang salah harus ditolak")
+	}
+	if verifyPassword("rahasia-admin", "bukan-hash") {
+		t.Fatal("hash invalid harus ditolak")
+	}
+}
+
 func TestHistorySQL(t *testing.T) {
 	day := 24 * time.Hour
 	for _, c := range []struct {

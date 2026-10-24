@@ -3,9 +3,10 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import AppChart from '../AppChart.vue'
 import GaugeChart from '../GaugeChart.vue'
-import { live, METRICS, fmt } from '../live.js'
+import { live, loadTimeframe, METRICS, fmt, TIMEFRAMES } from '../live.js'
 
 const metric = ref('power')
+const timeframe = ref(10)
 const gauges = [
   { key: 'power', label: 'Daya', icon: 'solar:bolt-bold-duotone', unit: 'W', decimals: 1, max: 3200, color: '#2563eb' },
   { key: 'current', label: 'Arus', icon: 'solar:flashlight-on-bold-duotone', unit: 'A', decimals: 2, max: 16, color: '#16a34a' },
@@ -29,6 +30,10 @@ const labels = computed(() => live.points.map((p) => new Date(p.ts).toLocaleTime
 const datasets = computed(() => [
   { label: `${m.value[1]} (${m.value[2]})`, data: live.points.map((p) => p[metric.value]), borderColor: '#2563eb', backgroundColor: '#2563eb33', fill: true },
 ])
+
+function changeTimeframe() {
+  loadTimeframe(timeframe.value)
+}
 </script>
 
 <template>
@@ -58,7 +63,12 @@ const datasets = computed(() => [
   <div class="card">
     <div class="row">
       <button v-for="[key, label] in METRICS.slice(0, 3)" :key="key" :class="{ on: metric === key }" @click="metric = key">{{ label }}</button>
-      <span class="muted">15 menit terakhir</span>
+      <label class="timeframe">Rentang waktu
+        <select v-model.number="timeframe" @change="changeTimeframe">
+          <option v-for="option in TIMEFRAMES" :key="option.minutes" :value="option.minutes">{{ option.label }}</option>
+        </select>
+      </label>
+      <span v-if="live.loading" class="muted">Memuat data…</span>
     </div>
     <AppChart :labels="labels" :datasets="datasets" />
   </div>
@@ -82,12 +92,14 @@ const datasets = computed(() => [
 .gauge-card:nth-child(3) .metric-label svg { color: #d97706; }
 .value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .value small { font-size: 14px; color: var(--muted); }
+.timeframe { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); font-size: 13px; }
 @media (max-width: 760px) {
   .gauge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .gauge-card:first-child { grid-column: 1 / -1; }
   .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .summary-grid .card { padding: 12px; }
   .value { font-size: 21px; }
+  .timeframe { margin-left: 0; }
 }
 @media (max-width: 420px) {
   .status { align-items: flex-start; gap: 8px 12px; }

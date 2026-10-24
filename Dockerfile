@@ -13,7 +13,8 @@ RUN go mod download
 COPY backend/ .
 RUN CGO_ENABLED=0 go build -o /powermon .
 
-FROM gcr.io/distroless/static-debian12
+FROM postgres:16-alpine
+RUN apk add --no-cache ca-certificates
 COPY --from=api /powermon /powermon
 COPY --from=web /src/dist /web
 ENV STATIC_DIR=/web

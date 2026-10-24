@@ -1,6 +1,9 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
+import zoomPlugin from 'chartjs-plugin-zoom'
+
+Chart.register(zoomPlugin)
 
 // Parent wajib mengganti array (bukan mutasi) agar watch terpicu.
 const props = defineProps({
@@ -9,6 +12,7 @@ const props = defineProps({
   type: { type: String, default: 'line' },
 })
 const canvas = ref()
+const zoomed = ref(false)
 let chart
 
 // Salin ke array biasa: Chart.js tidak cocok dengan proxy reaktif Vue.
@@ -26,6 +30,18 @@ onMounted(() => {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       elements: { point: { radius: 0 }, line: { borderWidth: 2 } },
+      plugins: {
+        zoom: {
+          pan: { enabled: true, mode: 'x', onPanComplete: () => (zoomed.value = true) },
+          zoom: {
+            drag: { enabled: true, borderColor: '#2563eb', backgroundColor: '#2563eb22' },
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+            onZoomComplete: () => (zoomed.value = true),
+          },
+        },
+      },
     },
   })
 })
@@ -34,12 +50,22 @@ watch(() => [props.labels, props.datasets], () => {
   chart.update()
 })
 onBeforeUnmount(() => chart.destroy())
+
+function resetZoom() {
+  chart.resetZoom()
+  zoomed.value = false
+}
 </script>
 
 <template>
-  <div class="chart"><canvas ref="canvas" /></div>
+  <div class="chart-wrap">
+    <div class="chart"><canvas ref="canvas" /></div>
+    <button v-if="zoomed" class="reset-zoom" type="button" @click="resetZoom">Reset zoom</button>
+  </div>
 </template>
 
 <style scoped>
 .chart { position: relative; height: 300px; }
+.chart-wrap { position: relative; }
+.reset-zoom { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 4px 8px; background: var(--card); }
 </style>
